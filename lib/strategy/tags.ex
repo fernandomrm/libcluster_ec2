@@ -42,6 +42,7 @@ defmodule ClusterEC2.Strategy.Tags do
     Application.ensure_all_started(:ex_aws)
     GenServer.start_link(__MODULE__, opts)
   end
+
   def init(opts) do
     state = %State{
       topology: Keyword.fetch!(opts, :topology),
@@ -51,12 +52,14 @@ defmodule ClusterEC2.Strategy.Tags do
       config: Keyword.fetch!(opts, :config),
       meta: MapSet.new([])
     }
+    Process.send_after(self(), :load, Keyword.get(state.config, :polling_interval, @default_polling_interval))
     {:ok, state, 0}
   end
 
   def handle_info(:timeout, state) do
     handle_info(:load, state)
   end
+
   def handle_info(:load, %State{topology: topology, connect: connect, disconnect: disconnect, list_nodes: list_nodes} = state) do
     new_nodelist = MapSet.new(get_nodes(state))
     added        = MapSet.difference(new_nodelist, state.meta)
