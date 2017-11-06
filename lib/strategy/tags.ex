@@ -125,7 +125,7 @@ defmodule ClusterEC2.Strategy.Tags do
     end
   end
 
-  defp ip_xpath(:private), do: ~x"//DescribeInstancesResponse/reservationSet/item/instancesSet/item/privateIpAddress/text()"ls
+  defp ip_xpath(:private), do: ~x"//DescribeInstancesResponse/reservationSet/item/instancesSet/item/privateDnsName/text()"ls
   defp ip_xpath(:public), do: ~x"//DescribeInstancesResponse/reservationSet/item/instancesSet/item/publicIpAddress/text()"ls
 
   defp fetch_tag_value(_k,v) when is_function(v, 0), do: v.()
@@ -135,7 +135,7 @@ defmodule ClusterEC2.Strategy.Tags do
   defp ip_to_nodename(list, app_prefix) when is_list(list) do
     list
     |> Enum.map(fn ip ->
-      :"#{app_prefix}@ip-#{String.replace(ip, ".", "-")}"
+      :"#{app_prefix}@#{ip}"
     end)
   end
 end
