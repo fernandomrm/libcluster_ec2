@@ -65,6 +65,8 @@ defmodule ClusterEC2.Strategy.Tags do
   def handle_info(:load, %State{topology: topology, connect: connect, disconnect: disconnect, list_nodes: list_nodes} = state) do
     Logger.info "Process load message"
     new_nodelist = MapSet.new(get_nodes(state))
+    Logger.info "Current nodes: #{inspect state.meta}"
+    Logger.info "New nodes: #{inspect new_nodelist}"
     added        = MapSet.difference(new_nodelist, state.meta)
     removed      = MapSet.difference(state.meta, new_nodelist)
     new_nodelist = case Cluster.Strategy.disconnect_nodes(topology, disconnect, list_nodes, MapSet.to_list(removed)) do
