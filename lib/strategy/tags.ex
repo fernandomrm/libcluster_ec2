@@ -32,6 +32,7 @@ defmodule ClusterEC2.Strategy.Tags do
   use Cluster.Strategy
   import Cluster.Logger
   import SweetXml, only: [sigil_x: 2]
+  require Logger
 
   alias Cluster.Strategy.State
 
@@ -57,10 +58,12 @@ defmodule ClusterEC2.Strategy.Tags do
   end
 
   def handle_info(:timeout, state) do
+    Logger.info "Process timeout message"
     handle_info(:load, state)
   end
 
   def handle_info(:load, %State{topology: topology, connect: connect, disconnect: disconnect, list_nodes: list_nodes} = state) do
+    Logger.info "Process load message"
     new_nodelist = MapSet.new(get_nodes(state))
     added        = MapSet.difference(new_nodelist, state.meta)
     removed      = MapSet.difference(state.meta, new_nodelist)
@@ -85,7 +88,9 @@ defmodule ClusterEC2.Strategy.Tags do
     Process.send_after(self(), :load, Keyword.get(state.config, :polling_interval, @default_polling_interval))
     {:noreply, %{state | :meta => new_nodelist}}
   end
-  def handle_info(_, state) do
+
+  def handle_info(message, state) do
+    Logger.info "Process #{message} message"
     {:noreply, state}
   end
 
@@ -98,8 +103,7 @@ defmodule ClusterEC2.Strategy.Tags do
       tag_name != nil and tag_value != nil and app_prefix != nil ->
         params = [filters: ["tag:#{tag_name}": fetch_tag_value(tag_name,tag_value)]]
         request = ExAws.EC2.describe_instances(params)
-        require Logger
-        Logger.debug "#{inspect request}"
+        Logger.info "#{inspect request}"
         case ExAws.request(request, region: ClusterEC2.instance_region()) do
           {:ok, %{body: body}} ->
             body
