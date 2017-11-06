@@ -108,10 +108,12 @@ defmodule ClusterEC2.Strategy.Tags do
         Logger.info "#{inspect request}"
         case ExAws.request(request, region: ClusterEC2.instance_region()) do
           {:ok, %{body: body}} ->
+            Logger.info "Get nodes response: #{inspect body}"
             body
             |> SweetXml.xpath(ip_xpath(Keyword.get(config, :ip_type, :private)))
             |> ip_to_nodename(app_prefix)
-          _ ->
+          response ->
+            Logger.info "Get nodes response: #{inspect response}"
             []
         end
       tag_name == nil ->
