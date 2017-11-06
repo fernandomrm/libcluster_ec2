@@ -135,7 +135,7 @@ defmodule ClusterEC2.Strategy.Tags do
   defp ip_to_nodename(list, app_prefix) when is_list(list) do
     list
     |> Enum.map(fn ip ->
-      :"#{app_prefix}@#{ip}"
+      :"#{app_prefix}@ip-#{String.replace(ip, ".", "-")}"
     end)
   end
 end
