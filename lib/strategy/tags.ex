@@ -64,11 +64,13 @@ defmodule ClusterEC2.Strategy.Tags do
 
   def handle_info(:load, %State{topology: topology, connect: connect, disconnect: disconnect, list_nodes: list_nodes} = state) do
     Logger.info "Process load message"
-    new_nodelist = MapSet.new(get_nodes(state))
     Logger.info "Current nodes: #{inspect state.meta}"
-    Logger.info "New nodes: #{inspect new_nodelist}"
+    new_nodelist = MapSet.new(get_nodes(state))
+    Logger.info "EC2 nodes: #{inspect new_nodelist}"
     added        = MapSet.difference(new_nodelist, state.meta)
+    Logger.info "Added nodes: #{inspect added}"
     removed      = MapSet.difference(state.meta, new_nodelist)
+    Logger.info "Removed nodes: #{inspect removed}"
     new_nodelist = case Cluster.Strategy.disconnect_nodes(topology, disconnect, list_nodes, MapSet.to_list(removed)) do
                 :ok ->
                   new_nodelist
@@ -88,6 +90,7 @@ defmodule ClusterEC2.Strategy.Tags do
                 end)
             end
     Process.send_after(self(), :load, Keyword.get(state.config, :polling_interval, @default_polling_interval))
+    Logger.info "New nodes: #{inspect new_nodelist}"
     {:noreply, %{state | :meta => new_nodelist}}
   end
 
@@ -105,7 +108,7 @@ defmodule ClusterEC2.Strategy.Tags do
       tag_name != nil and tag_value != nil and app_prefix != nil ->
         params = [filters: ["tag:#{tag_name}": fetch_tag_value(tag_name,tag_value)]]
         request = ExAws.EC2.describe_instances(params)
-        Logger.info "#{inspect request}"
+        Logger.debug "#{inspect request}"
         case ExAws.request(request, region: ClusterEC2.instance_region()) do
           {:ok, %{body: body}} ->
             body
